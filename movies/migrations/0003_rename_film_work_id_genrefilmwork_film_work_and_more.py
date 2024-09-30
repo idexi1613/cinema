@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('movies', '0002_change_fields_import_content'),
-    ]
+    ] 
 
     operations = [
         migrations.RenameField(
