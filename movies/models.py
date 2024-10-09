@@ -1,27 +1,10 @@
-import uuid
 from django.db import models
+from .mixins import TimeStampedMixin, UUIDMixin
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.translation import gettext_lazy as _
 
 
-class TimeStampedMixin(models.Model):
-    created = models.DateTimeField(auto_now_add=True) #отличаются
-    modified = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract=True
-
-
-class UUIDMixin(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    class Meta:
-        abstract=True
-
-
 class Genre(TimeStampedMixin, UUIDMixin):
-    def __str__(self):
-        return self.name
     
     name = models.CharField(_('name'), max_length=255)
     description = models.TextField(_('description'), blank=True, null=True)
@@ -31,14 +14,17 @@ class Genre(TimeStampedMixin, UUIDMixin):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
+        indexes = [
+            models.Index(fields=['name'])
+        ]
+    
+    def __str__(self):
+        return self.name
 
 class Filmwork(UUIDMixin, TimeStampedMixin):
     class FilmType(models.TextChoices):
         MOVIES = _('movie')
         TV_SHOW = _('tv_show')
-                   
-    def __str__(self):
-        return self.title
     
     certificate = models.CharField(_('certificate'), max_length=512, blank=True, null=True) 
     file_path = models.FileField(_('file'), blank=True, upload_to='movies/', null=True)
@@ -54,6 +40,14 @@ class Filmwork(UUIDMixin, TimeStampedMixin):
         verbose_name = 'Кинопроизведение'
         verbose_name_plural = 'Кинопроизведения'
 
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['creation_date'])
+        ]
+
+
+    def __str__(self):
+        return self.title
 
 class GenreFilmwork(UUIDMixin):
     film_work = models.ForeignKey(Filmwork, on_delete=models.CASCADE)
@@ -65,16 +59,24 @@ class GenreFilmwork(UUIDMixin):
         verbose_name = 'Жанр кинопроизведения'
         verbose_name_plural = 'Жанры кинопроизведений'
 
+        indexes = [
+            models.Index(fields=['film_work_id', 'genre_id'], name='genre_film_work_idx')
+        ]        
+
 class Person(TimeStampedMixin, UUIDMixin):
-    def __str__(self):
-        return self.full_name
-    
     full_name = models.CharField(_('full_name'), max_length=200, blank=True, null=True)
         
     class Meta:
         db_table = "content\".\"person"
         verbose_name = 'Персона'
         verbose_name_plural = 'Персоны'
+
+        indexes = [
+            models.Index(fields=['full_name'])
+        ]
+
+    def __str__(self):
+        return self.full_name
 
 
 class PersonFilmwork(UUIDMixin):
@@ -87,4 +89,9 @@ class PersonFilmwork(UUIDMixin):
         db_table = "content\".\"person_film_work"
         verbose_name = 'Персоналия киинопроизведения'
         verbose_name_plural = 'Персоналии киинопроизведений'
+
+        indexes = [
+            models.Index(fields=['film_work_id', 'person_id'], name='person_film_work_idx')
+        ]
+        
 
